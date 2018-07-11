@@ -1,1 +1,2 @@
-Reinforcment Learning Project to solve the chemotherapy booking problem.
+Reinforcement Learning Project to solve the chemotherapy booking problem.
+
