@@ -78,8 +78,9 @@ if param.TRAIN:
                 # print(batch)
                 # print(batch.shape)
                 batch_states = batch[:, 0]
-                batch_actions = batch[:, 1].reshape(-1,1).astype(int)
-                batch_rewards = batch[:, 2].reshape(-1,1)
+                batch_actions = batch[:, 1].astype(int)
+
+                batch_rewards = batch[:, 2]
                 batch_next_states = batch[:, 3]
                 batch_dones = batch[:, 4].reshape(-1,1)
 
@@ -88,16 +89,16 @@ if param.TRAIN:
 
                 Qprime = sess.run(Qnetwork.Qout, feed_dict={Qnetwork.input: batch_next_states})
 
-                maxQprime = np.max(Qprime, axis=1, keepdims=True)
+                maxQprime = np.max(Qprime, axis=1)
                 targetQ = batch_rewards + param.GAMMA * maxQprime
 
                 _ = sess.run([Qnetwork.updateModel], feed_dict={Qnetwork.input: batch_states,
                                                                 Qnetwork.actions: batch_actions,
                                                                 Qnetwork.targetQ: targetQ})
 
-            if episode % 10 == 0:
+            if episode % 100 == 0:
                 save_path = saver.save(sess, "./models/model.ckpt")
-                print("Model Saved")
+                print("Model Saved at %i", (episode))
                 print(f"total reward -> {total_reward}")
                 print(f"AvqQ -> {np.mean(q)}")
 
@@ -124,8 +125,6 @@ with tf.Session() as sess:
 
         total_rewards += reward
         patient = next_patient
-        print(state)
-        print(next_state)
         state = next_state
 
     print(str(env))
