@@ -9,7 +9,7 @@ tf.reset_default_graph()
 
 
 #instantiante qnetwork and memory
-Qnetwork = Qnetwork.Qnetwork(param.STATES, param.N_ACTIONS, hidden=[1])
+Qnetwork = Qnetwork.Qnetwork(param.STATES, param.N_ACTIONS, hidden=[4,4], learning_rate=param.ALPHA)
 memory = ExperienceBuffer.ExperienceBuffer(param.MEMORY_SIZE)
 
 
@@ -27,7 +27,7 @@ for i in range(param.PRE_TRAIN_LENGTH):
     patient = next_patient
 
 
-def update_explore(decay_step, eps_init=1, eps_final=0.01, decay_rate= 0.0001):
+def update_explore(decay_step, eps_init=1, eps_final=0.01, decay_rate=0.0001):
     return eps_final + (eps_init - eps_final) * np.exp(-decay_rate * decay_step)
 
 
@@ -96,11 +96,11 @@ if param.TRAIN:
                                                                 Qnetwork.actions: batch_actions,
                                                                 Qnetwork.targetQ: targetQ})
 
-            if episode % 100 == 0:
+            if episode % 1000 == 0:
                 save_path = saver.save(sess, "./models/model.ckpt")
-                print("Model Saved at %i", (episode))
+                print("Model Saved at Episode: %i" % (episode))
                 print(f"total reward -> {total_reward}")
-                print(f"AvqQ -> {np.mean(q)}")
+               # print(f"AvqQ -> {np.mean(q)}")
 
             rList.append(total_reward)
             dList.append(total_demand)
@@ -119,8 +119,6 @@ with tf.Session() as sess:
     while j <= param.MAX_EPISODE_STEPS:
         j += 1
         a, allQ = sess.run([Qnetwork.predict, Qnetwork.Qout], feed_dict={Qnetwork.input: state})
-        print(a[0])
-        print(allQ)
         next_state, next_patient, reward, done = env.step(a[0], patient)
 
         total_rewards += reward

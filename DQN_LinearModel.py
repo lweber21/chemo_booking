@@ -80,6 +80,7 @@ with tf.Session() as sess:
 
     plt.plot(eList, rList)
     plt.show()
+    print("Average Rewards:" + str(np.mean(rList)))
 
     if param.WRITE_RESULTS:
         with open(param.training_fname, 'w', newline='') as f:

@@ -25,7 +25,7 @@ initializer = tf.contrib.layers.variance_scaling_initializer()
 
 
 ## Establish the neural network
-X = tf.placeholder(shape=[None, n_inputs], dtype=tf.float32)
+X = tf.placeholder(shape=[None, param.STATES], dtype=tf.float32)
 hidden = tf.layers.dense(X, n_hidden, activation=tf.nn.relu,  kernel_initializer=initializer)
 Qout = tf.layers.dense(hidden, n_outputs, kernel_initializer=initializer)
 
@@ -44,22 +44,25 @@ eList = []
 rList = []
 dList = []
 
+def update_explore(decay_step, eps_init=1, eps_final=0.01, decay_rate=0.0001):
+    return eps_final + (eps_init - eps_final) * np.exp(-decay_rate * decay_step)
 
 env = BookEnv.BookingEnv(days=param.DAYS, daily_avail=param.DAILY_CAP, demand_dist=param.DEMAND_DIST)
 with tf.Session() as sess:
     sess.run(init)
     for i in range(param.N_EPISODES):
         env.reset()
-        state = env.state
+        state = env.get_state()
 
-        patient = env.Patient
+        patient = env.get_patient()
         total_rewards = 0
         j = 0
         while j <= param.MAX_EPISODE_STEPS:
             j += 1
+
             a, allQ = sess.run([predict, Qout], feed_dict={X: state})
 
-            if np.random.rand(1) < eps:
+            if np.random.rand(1) < update_explore(j):
                 a[0] = env.action_sample()
             next_state, next_patient, reward, done = env.step(a[0], patient)
 
@@ -68,7 +71,7 @@ with tf.Session() as sess:
             targetQ = allQ
             targetQ[0, a[0]] = reward + param.GAMMA*maxQ1
 
-            _ = sess.run([updateModel], feed_dict={X: state, nextQ: targetQ})
+            _,  = sess.run([updateModel], feed_dict={X: state, nextQ: targetQ})
 
             total_rewards += reward
             patient = next_patient
@@ -97,14 +100,17 @@ with tf.Session() as sess:
 
     #lets put our agent to work
     env.reset()
-    state = env.state
-    patient = env.Patient
+    state = env.get_state()
+    patient = env.get_patient()
+
     total_rewards = 0
     j = 0
     while j <= param.MAX_EPISODE_STEPS:
         j += 1
-        a = sess.run(predict, feed_dict={X: state})
+        print(state)
+        a, allQ = sess.run([predict,Qout], feed_dict={X: state})
         print(a[0])
+        print(allQ)
 
         next_state, next_patient, reward, done = env.step(a[0], patient)
 

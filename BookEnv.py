@@ -73,11 +73,13 @@ class BookingEnv:
 
     def reward(self, action):
         if self.overtime[action] > 0:
-            reward = -2 * self.overtime[action]
+            reward = -4 #* self.overtime[action]
         elif self.cap_used[action]/self.cap_avail[action] <= 0.5:
-            reward = 1./(self.cap_used[action]/self.cap_avail[action] + .001)
+            reward = 2.
+                     #/(self.cap_used[action]/self.cap_avail[action] + .001)
         else:
-            reward = -1/(self.cap_used[action]/self.cap_avail[action] + .0001)
+            reward = -.5
+                     #/(self.cap_used[action]/self.cap_avail[action] + .0001)
         return reward
 
     def generate_patient(self):
@@ -85,9 +87,9 @@ class BookingEnv:
         self.Patient = Patient(self.patient_id, np.random.choice(self.demandDist))
 
     def set_state(self):
-        current_state = self.cap_avail - self.cap_used
-        #zero_array = np.zeros(self.cap_used.shape)
-        #current_state = np.maximum(self.cap_used - self.cap_avail, zero_array)
+        #current_state = self.cap_avail - self.cap_used
+        zero_array = np.zeros(self.cap_used.shape)
+        current_state = np.maximum(self.cap_used - self.cap_avail, zero_array)
         self.state = np.append(current_state, np.array(self.Patient.demand))
         self.state = self.state.reshape(1, -1)
 
