@@ -10,7 +10,7 @@ tf.reset_default_graph()
 
 
 #instantiante qnetwork and memory
-Qnetwork = Qnetwork.Qnetwork(param.STATES, param.N_ACTIONS, hidden=[4], learning_rate=param.ALPHA)
+Qnetwork = Qnetwork.Qnetwork(param.STATES, param.N_ACTIONS, hidden=[10, 6], learning_rate=param.ALPHA)
 memory = ExperienceBuffer.ExperienceBuffer(param.MEMORY_SIZE)
 
 
@@ -28,7 +28,7 @@ for i in range(param.PRE_TRAIN_LENGTH):
     patient = next_patient
 
 
-def update_explore(decay_step, eps_init=1, eps_final=0.01, decay_rate=0.0001):
+def update_explore(decay_step, eps_init=1, eps_final=0.01, decay_rate=0.001):
     return eps_final + (eps_init - eps_final) * np.exp(-decay_rate * decay_step)
 
 
