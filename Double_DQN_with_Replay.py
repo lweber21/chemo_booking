@@ -5,11 +5,12 @@ import matplotlib.pyplot as plt
 import ExperienceBuffer
 import Qnetwork
 import Hyperparameters as param
+
 tf.reset_default_graph()
 
 
 #instantiante qnetwork and memory
-Qnetwork = Qnetwork.Qnetwork(param.STATES, param.N_ACTIONS, hidden=[4,4], learning_rate=param.ALPHA)
+Qnetwork = Qnetwork.Qnetwork(param.STATES, param.N_ACTIONS, hidden=[4], learning_rate=param.ALPHA)
 memory = ExperienceBuffer.ExperienceBuffer(param.MEMORY_SIZE)
 
 
@@ -37,6 +38,7 @@ if param.TRAIN:
     rList = []
     dList = []
     qList = []
+    lossValues = []
     decay_step = 1
     with tf.Session() as sess:
         sess.run(tf.global_variables_initializer())
@@ -73,30 +75,47 @@ if param.TRAIN:
 
                 #learn
                 batch = memory.sample(param.BATCH_SIZE)
-
+                #print("Batch")
+                #print(batch)
                 # print(type(batch))
                 # print(batch)
                 # print(batch.shape)
                 batch_states = batch[:, 0]
                 batch_actions = batch[:, 1].astype(int)
 
-                batch_rewards = batch[:, 2]
+
+                batch_rewards = batch[:, 2].reshape(-1,1)
                 batch_next_states = batch[:, 3]
-                batch_dones = batch[:, 4].reshape(-1,1)
+                batch_dones = batch[:, 4].reshape(-1, 1)
 
                 batch_states = np.vstack([s for s in batch_states])
                 batch_next_states = np.vstack([n for n in batch_next_states])
 
                 Qprime = sess.run(Qnetwork.Qout, feed_dict={Qnetwork.input: batch_next_states})
 
-                maxQprime = np.max(Qprime, axis=1)
+
+                maxQprime = np.max(Qprime, axis=1, keepdims=True)
                 targetQ = batch_rewards + param.GAMMA * maxQprime
 
-                _ = sess.run([Qnetwork.updateModel], feed_dict={Qnetwork.input: batch_states,
+
+                _, loss, act, q_model, qt = sess.run([Qnetwork.updateModel, Qnetwork.loss, Qnetwork.actions_onehot, Qnetwork.Q, Qnetwork.Qout], feed_dict={Qnetwork.input: batch_states,
                                                                 Qnetwork.actions: batch_actions,
                                                                 Qnetwork.targetQ: targetQ})
+                #
+                # print(batch_actions)
+                #
+                # print("Action one hot")
+                # print(act)
+                # print("Calcualted Qvalues")
+                # print(qt)
+                #
+                # print("Predicted Q)")
+                # print(q_model)
+                # print("targetQ")
+                # print(targetQ)
+                # print("Loss: %f" % loss)
 
-            if episode % 1000 == 0:
+            if episode % 100 == 0:
                 save_path = saver.save(sess, "./models/model.ckpt")
                 print("Model Saved at Episode: %i" % (episode))
                 print(f"total reward -> {total_reward}")
@@ -104,10 +123,22 @@ if param.TRAIN:
 
             rList.append(total_reward)
             dList.append(total_demand)
+            #print(loss)
+            lossValues.append(loss)
             avgQ = np.mean(q)
+        save_path = saver.save(sess, "./models/model.ckpt")
 
     print(np.mean(rList))
     print(np.mean(avgQ))
+    print(np.mean(lossValues))
+    xvals = np.arange(1, len(rList)+1).tolist()
+
+    plt.plot(xvals, rList)
+    plt.show()
+
+    plt.plot(xvals, lossValues)
+    plt.show()
+
 
 with tf.Session() as sess:
     saver.restore(sess, "./models/model.ckpt")
@@ -120,7 +151,9 @@ with tf.Session() as sess:
         j += 1
         a, allQ = sess.run([Qnetwork.predict, Qnetwork.Qout], feed_dict={Qnetwork.input: state})
         next_state, next_patient, reward, done = env.step(a[0], patient)
-
+        print(state)
+        print(a)
+        print(allQ)
         total_rewards += reward
         patient = next_patient
         state = next_state

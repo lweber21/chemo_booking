@@ -23,14 +23,13 @@ class Qnetwork:
         self.predict = tf.argmax(self.Qout, 1)
 
         # Calculate the loss function
-        self.targetQ = tf.placeholder(shape=[None], dtype=tf.float32)
+        self.targetQ = tf.placeholder(shape=[None, 1], dtype=tf.float32)
         self.actions = tf.placeholder(shape=[None], dtype=tf.int32)
-        self.actions_onehot = tf.one_hot(self.actions, depth=self.num_actions, dtype=tf.float32)
-        self.Q = tf.reduce_sum(tf.multiply(self.actions_onehot, self.Qout))
+        self.actions_onehot = tf.one_hot(self.actions, depth=self.num_actions, dtype=tf.float32, axis=-1)
+        self.Q = tf.reduce_sum(tf.multiply(self.actions_onehot, self.Qout), axis=-1, keepdims=True)
 
         self.loss = tf.reduce_mean(tf.square(self.targetQ - self.Q))
         self.trainer = tf.train.GradientDescentOptimizer(learning_rate=self.learning_rate)
         self.updateModel = self.trainer.minimize(self.loss)
 
 
-#myNet = Qnetwork(10, 4, hidden=[3,4])

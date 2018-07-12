@@ -11,7 +11,7 @@ class Patient:
 
 class BookingEnv:
 
-    def __init__(self, days, daily_avail=5, cap_init=0, demand_dist=[1,1]):
+    def __init__(self, days, daily_avail=5, cap_init=0, demand_dist=[1, 1]):
         self.days = days
         self.demandDist = demand_dist
         self.total_demand = 0
@@ -57,7 +57,7 @@ class BookingEnv:
         if False:
             done = True
 
-        return self.state, self.Patient, reward, done
+        return self.get_state(), self.get_patient(), reward, done
 
     def set_total_demand(self, demand):
         self.total_demand += demand
@@ -73,12 +73,12 @@ class BookingEnv:
 
     def reward(self, action):
         if self.overtime[action] > 0:
-            reward = -4 #* self.overtime[action]
+            reward = -3 * self.overtime[action]
         elif self.cap_used[action]/self.cap_avail[action] <= 0.5:
             reward = 2.
                      #/(self.cap_used[action]/self.cap_avail[action] + .001)
         else:
-            reward = -.5
+            reward = 0
                      #/(self.cap_used[action]/self.cap_avail[action] + .0001)
         return reward
 
@@ -87,9 +87,9 @@ class BookingEnv:
         self.Patient = Patient(self.patient_id, np.random.choice(self.demandDist))
 
     def set_state(self):
-        #current_state = self.cap_avail - self.cap_used
-        zero_array = np.zeros(self.cap_used.shape)
-        current_state = np.maximum(self.cap_used - self.cap_avail, zero_array)
+        current_state = self.cap_avail - self.cap_used
+        #zero_array = np.zeros(self.cap_used.shape)
+        #current_state = np.maximum(self.cap_avail - self.cap_used , zero_array)
         self.state = np.append(current_state, np.array(self.Patient.demand))
         self.state = self.state.reshape(1, -1)
 

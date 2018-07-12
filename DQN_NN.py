@@ -34,20 +34,24 @@ predict = tf.argmax(Qout, 1)
 
 #Calculate the loss function
 nextQ = tf.placeholder(shape=[1, param.N_ACTIONS], dtype=tf.float32)
-loss = tf.reduce_sum(tf.square(nextQ - Qout))
+loss = tf.reduce_sum(tf.abs(nextQ - Qout))
 trainer = tf.train.GradientDescentOptimizer(learning_rate=learning_rate)
 updateModel = trainer.minimize(loss)
+
+
+
+def update_explore(decay_step, eps_init=1, eps_final=0.01, decay_rate=0.0001):
+    return eps_final + (eps_init - eps_final) * np.exp(-decay_rate * decay_step)
+
+
+env = BookEnv.BookingEnv(days=param.DAYS, daily_avail=param.DAILY_CAP, demand_dist=param.DEMAND_DIST)
 
 ##Training the network
 init = tf.global_variables_initializer()
 eList = []
 rList = []
 dList = []
-
-def update_explore(decay_step, eps_init=1, eps_final=0.01, decay_rate=0.0001):
-    return eps_final + (eps_init - eps_final) * np.exp(-decay_rate * decay_step)
-
-env = BookEnv.BookingEnv(days=param.DAYS, daily_avail=param.DAILY_CAP, demand_dist=param.DEMAND_DIST)
+saver = tf.train.Saver()
 with tf.Session() as sess:
     sess.run(init)
     for i in range(param.N_EPISODES):
@@ -84,8 +88,11 @@ with tf.Session() as sess:
 
         rList.append(total_rewards)
         dList.append(env.total_demand)
+
         if(i + 1) % 100 == 0:
             print(f"Episode {i + 1}: total reward -> {total_rewards}")
+            save_path = saver.save(sess, "./models/NN/model.ckpt")
+            print("Model Saved at Episode: %i" % (i))
 
     plt.plot(eList, rList)
     plt.show()
@@ -99,6 +106,8 @@ with tf.Session() as sess:
                 thewriter.writerow([e + 1, rList[e], dList[e]])
 
     #lets put our agent to work
+with tf.Session() as sess:
+    saver.restore(sess, "./models/NN/model.ckpt")
     env.reset()
     state = env.get_state()
     patient = env.get_patient()

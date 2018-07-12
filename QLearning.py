@@ -52,7 +52,7 @@ def choose_action(state):
         return np.argmax(q(state))
 
 
-env = BookEnv.BookingEnv(days=param.DAYS, daily_avail=param.DAILY_CAP, demand_dist= param.DEMAND_DIST)
+env = BookEnv.BookingEnv(days=param.DAYS, daily_avail=param.DAILY_CAP, demand_dist=param.DEMAND_DIST)
 
 rList = []
 eList = []
